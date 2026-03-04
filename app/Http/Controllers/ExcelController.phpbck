@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+class ExcelController extends Controller
+{
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        //$this->middleware('auth');
+    }
+
+    /**
+     * Show the application dashboard.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+/*	
+$spreadsheet = new Spreadsheet();
+$sheet = $spreadsheet->getActiveSheet();
+$sheet->setCellValue('A1', 'Hello World  RICKy!');
+
+$writer = new Xlsx($spreadsheet);
+$writer->save('hello world.xlsx'); 
+*/
+
+// READ
+DB::connection('mysql')->beginTransaction();
+$spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load('AIRCHINA.xlsx');
+//  Get worksheet dimensions
+$sheet = $spreadsheet->getActiveSheet(); 
+$highestRow = $sheet->getHighestRow(); 
+$highestColumn = $sheet->getHighestColumn();
+//  Loop through each row of the worksheet in turn
+for ($row = 2; $row <= $highestRow; $row++)
+{ 
+    //  Read a row of data into an array
+    $rowData = $sheet->rangeToArray('A' . $row . ':N' . $row,NULL,TRUE,FALSE);
+    //  Use foreach loop and insert data into Query
+    echo $rowData[0][4] ." = ".date('Y-m-d', strtotime($rowData[0][4])) ." =>".$rowData[0][2]. ", ".$rowData[0][3] ;   
+    
+	$patients = DB::insert("
+			INSERT INTO  patient_airchina (`departureDate`, `lastname`, `firstname`, `dob`, `gender`, `address`, `mobile`, `nationality`, `passportNo`, `airline`,  `email`, `photoLink`,`flightNo`) VALUES
+			(
+			'".date('Y-m-d', strtotime($rowData[0][1]))."'
+			,'".$rowData[0][2]."'
+			,'".$rowData[0][3]."'
+			,'".date('Y-m-d', strtotime($rowData[0][4]))."'
+			,'".$rowData[0][5]."'
+			,'".$rowData[0][6]."'
+			,'".$rowData[0][7]."'
+			,'".$rowData[0][8]."'
+			,'".$rowData[0][9]."'
+			,'".$rowData[0][10]."'
+			,'".$rowData[0][11]."'
+			,'".$rowData[0][12]."'
+			,'".$rowData[0][13]."'
+			)
+			");
+     //print_r($rowData[0][2]);
+     echo "<br>";
+}
+DB::connection('mysql')->commit();  
+echo 'DONE TEMPORARY UPLOADING...';
+ 
+// Store data from the activeSheet to the varibale in the form of Array
+//$data = array(1,$sheet->toArray(null,true,true,true)); 
+   
+// Display the sheet content 
+
+
+
+
+   
+     
+     
+	DB::connection('mysql')->beginTransaction();
+	$cstr = '(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP) (HOST =10.30.154.8)(PORT = 1521))  (CONNECT_DATA= (SID = erosprod))     )';
+	$conn = oci_connect("erosbs", "erosbs", $cstr); 
+
+	$sql = "INSERT into PATIENT_MASTER (PM_PID, PM_FULLNAME, PM_LASTNAME, PM_FIRSTNAME, PM_GENDER, PM_DOB, PM_ADDRESS, PM_MOBILENO, PM_PASSPORTNO, PM_NATIONALITY, 
+	PM_CREATED_ON, PM_CREATED_BY, PM_UPDATE_ON, PM_UPDATE_BY, PM_LASTVISIT, PM_EMAIL, PM_BARANGAY, PM_CITY) VALUES (
+	:PM_PID, :PM_FULLNAME, :PM_LASTNAME, :PM_FIRSTNAME, :PM_GENDER, :PM_DOB, :PM_ADDRESS, :PM_MOBILENO, :PM_PASSPORTNO, :PM_NATIONALITY,
+	:PM_CREATED_ON, :PM_CREATED_BY, :PM_UPDATE_ON, :PM_UPDATE_BY, :PM_LASTVISIT, :PM_EMAIL, :PM_BARANGAY, :PM_CITY
+	)";
+		
+	$datas =  DB::select("
+		SELECT *
+		FROM `patient_airchina` tb1
+		WHERE
+		tb1.`erosPatientId` IS NULL
+	");
+	$max = DB::select("SELECT SUBSTR(MAX(erosPatientId),-4) as iMax from patient_airchina where erosPatientId like 'U".date('Ymd')."%' " );
+
+	$x = ($max[0]->iMax != 0)?$max[0]->iMax+1:1;
+	
+	foreach($datas as $data)
+	{
+		echo "<br>";
+		$compiled = oci_parse($conn, $sql);
+		echo $PM_PID = "U".date('Ymd').sprintf('%04d', $x++);//'U202206250002';
+		$PM_FULLNAME = strtoupper($data->lastname . ", ".  $data->firstname);// "VALMORES, RICKY TEST";
+		$PM_LASTNAME = strtoupper($data->lastname);  //"VALMORES";
+		$PM_FIRSTNAME = strtoupper($data->firstname) ;  //"RICKY TEST";
+		$PM_GENDER =  substr($data->gender, 0, 1);//"M";
+		$PM_DOB = \Carbon\Carbon::createFromFormat('Y-m-d', $data->dob)->format('d-M-Y');    //date_format($data['dob'], "Y-m-d"); //"01-AUG-1983";
+		$PM_ADDRESS = strtoupper($data->address);//"32 KALAYAAN C BATASAN HILLS Q.C";
+		$PM_MOBILENO = $data->mobile;//"09610060876";
+		$PM_PASSPORTNO =  strtoupper($data->passportNo);//"PA12345678Z";
+		$PM_NATIONALITY = strtoupper($data->nationality); //"FILIPINO";
+		$PM_CREATED_ON = \Carbon\Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('d-M-Y');//"27-JUN-2022";
+		$PM_CREATED_BY = "RICKY";
+		$PM_UPDATE_ON = \Carbon\Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('d-M-Y'); //"27-JUN-2022";
+		$PM_UPDATE_BY = "RICKY";
+		$PM_LASTVISIT = \Carbon\Carbon::createFromFormat('Y-m-d', date('Y-m-d'))->format('d-M-Y');//"27-JUN-2022";
+		$PM_EMAIL =  "oneworldswabbing@gmail.com"; // $data['email']; //"ricky.valmores@gmail.com";
+		$PM_BARANGAY = ".";
+		$PM_CITY = ".";
+
+		oci_bind_by_name($compiled, ":PM_PID", $PM_PID);
+		oci_bind_by_name($compiled, ":PM_FULLNAME", $PM_FULLNAME);
+		oci_bind_by_name($compiled, ":PM_LASTNAME", $PM_LASTNAME);
+		oci_bind_by_name($compiled, ":PM_FIRSTNAME", $PM_FIRSTNAME);
+		oci_bind_by_name($compiled, ":PM_GENDER", $PM_GENDER);
+		oci_bind_by_name($compiled, ":PM_DOB", $PM_DOB);
+		oci_bind_by_name($compiled, ":PM_ADDRESS", $PM_ADDRESS);
+		oci_bind_by_name($compiled, ":PM_MOBILENO", $PM_MOBILENO );
+		oci_bind_by_name($compiled, ":PM_PASSPORTNO", $PM_PASSPORTNO);
+		oci_bind_by_name($compiled, ":PM_NATIONALITY", $PM_NATIONALITY);
+		oci_bind_by_name($compiled, ":PM_CREATED_ON", $PM_CREATED_ON);
+		oci_bind_by_name($compiled, ":PM_CREATED_BY", $PM_CREATED_BY);
+		oci_bind_by_name($compiled, ":PM_UPDATE_ON", $$PM_UPDATE_ON);
+		oci_bind_by_name($compiled, ":PM_UPDATE_BY", $PM_UPDATE_BY);
+		oci_bind_by_name($compiled, ":PM_LASTVISIT", $PM_LASTVISIT);
+		oci_bind_by_name($compiled, ":PM_EMAIL", $PM_EMAIL);
+		oci_bind_by_name($compiled, ":PM_BARANGAY", $PM_BARANGAY);
+		oci_bind_by_name($compiled, ":PM_CITY", $PM_CITY);
+
+		$result = oci_execute($compiled);
+		
+		if (!$result) {
+		    $e = oci_error($query);  // For oci_execute errors pass the statement handle
+		    print htmlentities($e['message']);
+		    print "\n<pre>\n";
+		    print htmlentities($e['sqltext']);
+		    printf("\n%".($e['offset']+1)."s", "^");
+		    print  "\n</pre>\n";
+		}else{
+			print "<br>Connected and Inserted to Oracle! PROD EROS";  
+			DB::update("UPDATE `patient_airchina` tb1  SET tb1.`erosPatientId` = '".$PM_PID."' WHERE tb1.id = '".$data->id."'  ");
+			file_put_contents($PM_PID.".jpg", fopen($data->photoLink, 'r'));
+		}
+		oci_close($conn);
+	} 
+	DB::connection('mysql')->commit();  
+     
+    }
+}
