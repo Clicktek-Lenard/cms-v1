@@ -1,0 +1,21 @@
+{
+    "patient":
+	[
+		{
+			"id"	: "Walk-in"
+		},
+      	{
+			"id"	: "Priority"
+		},
+        {
+			"id"	: "HMO"
+		},
+        {
+			"id"	: "Corporate"
+		},
+        {
+			"id"	: "Insurance"
+		}
+		
+	]
+}

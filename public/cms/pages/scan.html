@@ -1,0 +1,84 @@
+<style>
+    @media (min-width: 768px) {
+        .sub-container{ margin:0px 25% 0px 25%;  }
+    }
+    .pageWrapper {
+        width: 244px;
+        margin: 0 auto;
+        padding: 5px 0;
+        min-height:350px;
+        
+    }
+    .boxWrapper {
+        width: 242px;
+        height: 252px;
+        border: 1px solid #000000;
+        vertical-align:middle;
+        position:fixed;
+        border-color:red;
+    }
+	.boxQRCODE {
+        width: 150px;
+        height: 150px;
+        border: 1px solid #000000;
+        vertical-align:middle;
+        position:fixed;
+        border-color:#0F0;
+		/*border-bottom-color:#FFFF00;
+		border-right-color:#FFFF00;*/
+		margin:25px 43px 0 45px;
+    }
+    
+    #result{
+        padding:45% 20% 45% 20%;
+        height:100%;
+        text-align:center;
+        color:red;
+    }
+	
+	
+    video {
+      top:30px;
+      left: 0px;
+      bottom:30px;
+      position: fixed;
+      width: 100%;
+      height: auto;
+      max-height:80%;
+    }
+    .modal-footer {
+        position:relative;
+    }
+	canvas {
+		image-rendering: optimizeSpeed;
+		image-rendering: -moz-crisp-edges;
+		image-rendering: -webkit-optimize-contrast;
+		image-rendering: optimize-contrast;
+		-ms-interpolation-mode: nearest-neighbor;
+	}
+	
+</style>
+<div class="sub-container" >
+	<div class="pageWrapper">
+        <video id="v" autoplay="autoplay"></video>
+        <div class="boxWrapper">
+        	<div class="boxQRCODE">
+	            <div id="result"></div>
+            </div>
+        </div>
+        <canvas style="width: 320px; height: 240px; display:none;" id="qr-canvas" width="320" height="240"></canvas>
+    </div>
+</div>
+<input type="button" id="scanClick"  style=" display:none;"/>
+ 
+<script type="text/javascript" src="../js/qr/llqrcode.js"></script> 
+<script type="text/javascript" src="../js/qr/webqr.js"></script>
+<script>
+    $(document).ready(function()
+    { 
+		var mless = 180;
+		if ($(window).width() < 767) mless = 130;
+		$("#modalQR").height($(window).height() - mless);
+		setTimeout( '$("#scanClick").click();' ,500 );
+    });
+</script>
