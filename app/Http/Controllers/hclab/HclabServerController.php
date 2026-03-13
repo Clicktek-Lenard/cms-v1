@@ -80,11 +80,11 @@ class HclabServerController extends Controller
                 'key'    => env('AWS_ACCESS_KEY_ID'),
                 'secret' => env('AWS_SECRET_ACCESS_KEY')
             ],
-            'region' => 'ap-southeast-1',
+            'region' => env('AWS_DEFAULT_REGION', 'ap-southeast-1'),
             'version' => 'latest',
 
         ]),
-		'nwdi-pdf-bucket',
+		env('AWS_BUCKET', 'nwdi-pdf-bucket'),
 		'',
 		new \League\Flysystem\AwsS3V3\PortableVisibilityConverter(
 			\League\Flysystem\Visibility::PRIVATE
