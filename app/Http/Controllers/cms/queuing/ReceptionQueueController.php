@@ -27,14 +27,13 @@ class ReceptionQueueController extends Controller
         $statuses = ['completed', 'in_progress','waiting','startQueue', 'on_hold', 'resume_queue'];     // Replace with the desired status
 
         $queue = Kiosk::getQueue($station, $statuses);
-
         $ipAddress = $request->getClientIp();
         $counter = Counter::where('IPv4', $ipAddress)->where('Department', 'Reception')->first();
 
         if ($counter) {
             $stationNumber = $counter->StationNumber;
             $department = $counter->Department;
-    
+
             if ($department !== 'Reception') {
                 $message = 'Reception Queue';
                 $message2 = 'Access Denied: Department not authorized';
@@ -45,7 +44,7 @@ class ReceptionQueueController extends Controller
             $message = 'Reception Queue';
             return view('cms.error', ['message' => $message]);
         }
-    
+
         return view('cms.queuing.receptionQueue', ['queue' => $queue, 'counter' => $counter, 'queCount' => count($queue)]);
     }
 
@@ -65,7 +64,7 @@ class ReceptionQueueController extends Controller
         $statuses = ['completed', 'in_progress','waiting','startQueue', 'on_hold', 'resume_queue', 'next_room'];
 
         $docIn = DB::connection('Eros')->table('Physician')->where('EmpId', '=', Auth::user()->AccessMapId)->get(array('Id'));
-	
+
         if(count($docIn) == 0)
         {
 		echo "Missing Params";die();
@@ -107,20 +106,20 @@ class ReceptionQueueController extends Controller
     public function exitStation(Request $request)
     {
         $queueID = $request->input('queueID');
-        $station = $request->input('station'); 
-    
+        $station = $request->input('station');
+
         // Find the record with the given queueID
         $kiosk = Kiosk::where('IdQueueCMS', $queueID)->first();
-    
+
         if ($kiosk) {
             // Retrieve the current stations
             $stations = explode(', ', $kiosk->Station);
-            
+
             // Remove the specified station from the list
             $stations = array_filter($stations, function($value) use ($station) {
                 return $value !== $station;
             });
-    
+
             // Check if there's only one station left
             if (count($stations) === 0) {
                 // Update the record as 'exit' and status as 'complete'
@@ -132,23 +131,23 @@ class ReceptionQueueController extends Controller
             } else {
                 // Convert the list back to a comma-separated string
                 $updatedStations = implode(', ', $stations);
-        
+
                 // Update the record with the modified stations
                 $kiosk->update([
-                    'Station' => $updatedStations, 
-                    'Status' => 'next_room', 
+                    'Station' => $updatedStations,
+                    'Status' => 'next_room',
                     'CurrentRoom' => 'Lobby',
                     'numOfCall' => '0'
                 ]);
             }
-            
+
             return response()->json(['success' => true]);
         }
-    
+
         return response()->json(['success' => false, 'message' => 'Record not found']);
     }
-    
-    
+
+
     public function updateStatus(Request $request)
     {
         $queueID = $request->input('queueID');
@@ -177,7 +176,7 @@ class ReceptionQueueController extends Controller
 
         Kiosk::where('Id', $queueID)->update($data);
         // Kiosk::where('Id', $queueID)->update([
-        //     'Status' => $status, 
+        //     'Status' => $status,
         //     'lastClick' => Auth::user()->username,
         //     'Counter' => $counter
         // ]);
@@ -187,14 +186,14 @@ class ReceptionQueueController extends Controller
     public function updateCurrentRoom(Request $request)
     {
         $queueID = $request->input('queueID');
-        $roomName = $request->input('roomName'); 
+        $roomName = $request->input('roomName');
 
         Kiosk::where('Id', $queueID)->update([
             'CurrentRoom' => $roomName
         ]);
         return response()->json(['success' => true]);
     }
-    
+
     public function insertPatientCode(Request $request)
     {
         $patientId = $request->input('IdPatient');
@@ -211,12 +210,12 @@ class ReceptionQueueController extends Controller
             die();
         }
         $Code = session('userClinicCode').$myDBId. date('ymd') . sprintf('%04d', $max++);
-        
+
         $patient = KioskPatient::find($patientId);
         if (!empty($patient->Code)) {
             return response()->json(['success' => false, 'message' => 'Code already exists in KioskPatient.']);
         }
-    
+
         // Update the status in KioskPatient
         KioskPatient::where('Id', $patientId)
             ->where(function ($query) {
@@ -224,14 +223,14 @@ class ReceptionQueueController extends Controller
                       ->orWhere('Code', ''); // or if Code is an empty string
             })
             ->update(['Code' => $Code]);
-    
+
         $patient = KioskPatient::find($patientId);
-    
+
         // Check if ErosPatient with the same FullName and DOB but different Code exists
         $erosPatient = ErosPatient::where('FullName', $patient->FullName)
             ->where('DOB', $patient->DOB)
             ->first();
-    
+
             if ($erosPatient) {
                 // dd('existing na bro');
                 // If exists, return success without adding a new record
@@ -246,7 +245,7 @@ class ReceptionQueueController extends Controller
                 $erosPatient->fill($patient->toArray());
                 $erosPatient->Code = $Code; // Ensure Code is set correctly
                 $erosPatient->save();
-                
+
                 // dd('ayan ni-write ko bro');
                 return response()->json(['success' => true, 'Id' => $erosPatient->Id]);
             }
@@ -261,7 +260,7 @@ class ReceptionQueueController extends Controller
         $queueno       = $request->input('queueno');
         $idpatient     = $request->input('idpatient');
         $kioskid       = $request->input('kioskid');
-        
+
         $log = new KioskLog();
         $log -> KioskId       = $kioskid;
         $log -> IdPatient     = $idpatient;
@@ -280,31 +279,31 @@ class ReceptionQueueController extends Controller
     public function vitalToConsult(Request $request)
     {
         $queueID = $request->input('queueID');
-    
+
         $kiosk = Kiosk::where('IdQueueCMS', $queueID)->first();
-    
+
         if ($kiosk) {
             $stationArray = explode(', ', $kiosk->Station);
-            
+
             foreach ($stationArray as &$value) {
                 if (strtoupper($value) === 'VITAL') { // Check for 'VITAL' in uppercase
                     $value = 'CONSULTATION';
                 }
             }
             unset($value); // Unset the reference
-    
+
             // Update the station list
             $kiosk->Station = implode(', ', $stationArray);
-    
-            $kiosk->Status = 'next_room'; 
-            $kiosk->CurrentRoom = 'Lobby'; 
-            $kiosk->numOfCall = 0; 
-    
+
+            $kiosk->Status = 'next_room';
+            $kiosk->CurrentRoom = 'Lobby';
+            $kiosk->numOfCall = 0;
+
             $kiosk->save();
-    
+
             return response()->json(['success' => true, 'message' => 'Station updated', 'station' => $kiosk->Station]);
         }
-    
+
         return response()->json(['success' => false, 'message' => 'Record not found']);
     }
 

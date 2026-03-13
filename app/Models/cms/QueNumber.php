@@ -45,6 +45,8 @@ class QueNumber extends Model
 			return 'Missing Param BU';
 		
 		$today = date('Y-m-d');
+		$buDateQuery = QueNumber::where('IdBU', $IdBU);
+		// dd(['sql' => $buDateQuery->toSql(), 'bindings' => $buDateQuery->getBindings(), 'result' => $buDateQuery->get(array('Date'))]);
 		$buDate = QueNumber::where('IdBU', $IdBU)->get(array('Date'))[0]->Date;
 		
 		if($buDate != $today)
@@ -52,7 +54,8 @@ class QueNumber extends Model
 			QueNumber::where('IdBU', $IdBU)->update(['Date' => $today, 'Number' => 0]);
 		}
 		
-		$queData = QueNumber::where('Date', date('Y-m-d'))->where('IdBU', $IdBU)->first();
+		$queDataQuery = QueNumber::where('Date', date('Y-m-d'))->where('IdBU', $IdBU);
+		$queData = $queDataQuery->first();
 		//print_r($queData);
 		$queData->Number = $queData->Number + 1;
 // dd($queData->Number);

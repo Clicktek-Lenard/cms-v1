@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
 		return true;
 	else
 		return false;
-    }	
+    }
 
     /**
      * Determine if the user is authorized to make this request.
@@ -61,43 +61,44 @@ class LoginRequest extends FormRequest
      */
     public function authenticate()
     {
-    
-  
+
+
         $this->ensureIsNotRateLimited();
 
   // Start Local Account Auth DB
-/*	
+/*
 	if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'username' => trans('auth.failed'),
             ]);
-	    
+
 	    // for updating local password  =  $user->password = bcrypt($request->input('password'));
         }
 */
  // End Local Account
-    
+
 
 
 	/////////////////////////////////
 	// LDAP
 	Log::debug("Binding user to LDAP.");
-         $ldap_user = Ldap::findAndBindUserLdap($this->input('username'), $this->input('password'));
+//         $ldap_user = Ldap::findAndBindUserLdap($this->input('username'), $this->input('password'));
+        $ldap_user = "";
 	 $user = User::where('username', '=', $this->input('username'))->whereNull('deleted_at')->where('ldap_import', '=', 1)->where('activated', '=', '1')->first();
          if (!$ldap_user) {
-           
+
 		Log::debug("Connection error to LDAP Server.");
-		
+
 		if (! Auth::attempt(array('username'=>$this->input('username'), 'password'=>$this->input('password')), $this->boolean('remember'))) {
 		   RateLimiter::hit($this->throttleKey());
 
 		   throw ValidationException::withMessages([
 			'username' => trans('auth.failed'),
 		    ]);
-		} 
-		
+		}
+
 		/*RateLimiter::hit($this->throttleKey());
 		throw ValidationException::withMessages([
 			'username' => trans('auth.failed'),
@@ -105,18 +106,18 @@ class LoginRequest extends FormRequest
 			'clinic' => 'Business Unit  for '. $this->input('modalClinics'),
 			'reset'=> 'Contact ICT to reset your password.'
 		]);*/
-		
+
 		if( !is_null(Auth::user()->role)  )
 		{
-			
+
 			####LAST CHECK IF selected branch have an access right
-			
-			
+
+
 			if( ! $checking = $this->CheckBranchAccess($this->input('modalClinics')) )
 			{
 				Log::debug('"No Access for this ":"['.$this->input('modalClinics').'-BRANCH]"');
 				Auth::guard('web')->logout();
-				
+
 				throw ValidationException::withMessages([
 					'error' => [
 						'code' => 'Branch Access  for '. $this->input('modalClinics'),
@@ -134,16 +135,16 @@ class LoginRequest extends FormRequest
 			session(['userClinicCode' => $this->input('modalClinics')]);
 			session(['userClinicName' => $this->input('modalClinicName')]);
 			Log::debug("User Select Clinic : ".$this->input('modalClinics'));
-		
+
 		}
-	    
+
 		$ldap_host = Setting::getSettings()->ldap_server;
-		
+
 		$user->last_login = date('Y-m-d H:i:s');
 		$user->ldap_server_status = 'LDAP Server : Unable to connect '.$ldap_host;
-		$user->save();	     
+		$user->save();
          } else {
-	 
+
 		//Added  ricky to check if username already existed
 		 // Check if the user already exists in the database and was imported via LDAP
 		 $user = User::where('username', '=', $this->input('username'))->whereNull('deleted_at')->where('ldap_import', '=', 1)->where('activated', '=', '1')->first(); // FIXME - if we get more than one we should fail. and we sure about this ldap_import thing?
@@ -164,7 +165,7 @@ class LoginRequest extends FormRequest
 		     // If the user exists and they were imported from LDAP already
 		 } else {
 			Log::debug("Local user ".$this->input('username')." exists in database. Updating existing user against LDAP.");
-			
+
 			$ldap_attr = Ldap::parseAndMapLdapAttributes($ldap_user);
 		 // print_r($ldap_attr); die();
 			$cn_roles = "";
@@ -190,8 +191,8 @@ class LoginRequest extends FormRequest
 			Log::debug("LDAP Employee Number ".$ldap_attr['AccessMapId']." successfully Update to local DB");
 		} // End if(!user)
 		Log::debug("LDAP user ".$this->input('username')." successfully bound to LDAP");
-		 
-		 
+
+
 		if (! Auth::attempt(array('username'=>$this->input('username'), 'password'=>$this->input('password')), $this->boolean('remember'))) {
 		   RateLimiter::hit($this->throttleKey());
 
@@ -201,15 +202,15 @@ class LoginRequest extends FormRequest
 		}
 		else if( !is_null(Auth::user()->role)  )
 		{
-			
+
 			####LAST CHECK IF selected branch have an access right
-			
-			
+
+
 			if( ! $checking = $this->CheckBranchAccess($this->input('modalClinics')) )
 			{
 				Log::debug('"No Access for this ":"['.$this->input('modalClinics').'-BRANCH]"');
 				Auth::guard('web')->logout();
-				
+
 				throw ValidationException::withMessages([
 					'error' => [
 						'code' => 'Branch Access  for '. $this->input('modalClinics'),
@@ -227,17 +228,17 @@ class LoginRequest extends FormRequest
 			session(['userClinicCode' => $this->input('modalClinics')]);
 			session(['userClinicName' => $this->input('modalClinicName')]);
 			Log::debug("User Select Clinic : ".$this->input('modalClinics'));
-		
+
 		}
-	    
+
          }
-	
-	
-	
-	
-	
+
+
+
+
+
 	RateLimiter::clear($this->throttleKey());
-	
+
 
 
     }

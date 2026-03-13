@@ -171,7 +171,14 @@ class QueuePagePackageInclusionController extends Controller
 				->table('AccessionNo')
 				->where('IdTransaction', $id)
 				->first();
-			
+
+			if (!$row) {
+				return response()->json([
+					'status' => 'error',
+					'message' => 'No AccessionNo record found for this transaction.',
+				], 404);
+			}
+
 			DB::connection('CMS')
 				->table('msg_queue')
 				->updateOrInsert(

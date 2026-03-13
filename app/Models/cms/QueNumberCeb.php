@@ -46,7 +46,7 @@ class QueNumber extends Model
 		
 			
 		$queData = QueNumber::where('Date', date('Y-m-d'))->where('IdBU', $IdBU)->first();
-		//print_r($queData);
+		// print_r($queData);
 		$queData->Number = $queData->Number + 1;
 // dd($queData->Number);
 		$queData->save();

@@ -162,7 +162,6 @@ class QueueController extends Controller
 			'InputDateTime'	=> date('Y-m-d h:i:s')
 		]);
 	}
-
 	$deptGroupsString = '';
 	// insert Temp to actual
 	if( is_array($request->input('itemSelected')) )
@@ -283,7 +282,6 @@ class QueueController extends Controller
 	}
 	
 	DB::connection('CMS')->commit(); 
-
 	// Updating the Station column in the Kiosk to exit the Queue
 	Kiosk::where('IdPatient', $request->input('QueueIdPatient'))->update([
 		'Station' => $deptGroupsString ?: '',
@@ -399,7 +397,7 @@ class QueueController extends Controller
 	//vitals 
 	$vitalsData = DB::connection('CMS')->table('Vitals')->where('IdQueue', $id)->get(array('*'));
 	//notif
-	$notifView = DB::connection('Notification')->table('Info')->where('ModuleId', $id)->get(array('PickUp', 'Email'));
+	//$notifView = DB::connection('Notification')->table('Info')->where('ModuleId', $id)->get(array('PickUp', 'Email'));
 
 	//dd($notifView);
 
@@ -416,16 +414,18 @@ class QueueController extends Controller
 		$lastPeriod = "";
 	}
 
-	if( count($notifView) !=0 )
-	{
-		$forPU = $notifView[0]->PickUp;
-		$forEmail = $notifView[0]->Email;
-	}
-	else
-	{
-		$forPU = "";
+	// if( count($notifView) !=0 )
+	// {
+	// 	$forPU = $notifView[0]->PickUp;
+	// 	$forEmail = $notifView[0]->Email;
+	// }
+	// else
+	// {
+	// 	$forPU = "";
+	// 	$forEmail = "";
+	// }
+	$forPU = "";
 		$forEmail = "";
-	}
 	
 	return view('cms.queueEdit', ['clinics' => $clinics, 'defaultClinic' => session('userClinicCode'), 'datas'=>$queue, 'postLink'=>'',  'trans' =>json_encode($trans), 'saveButton' => $saveButton, 'disableButton' => $disableButton, 'approveButtonDisabled' => $approveButtonDisabled, 'paymentButtonDisabled' => $paymentButtonDisabled , 'medication' => $medication, 'lastDose' => $lastDose, 'lastPeriod' => $lastPeriod, 'hl7Btn' => $hl7Btn, 'forPU' => $forPU, 'forEmail' => $forEmail, 'msgQueue' => $msgQueued ]);     
 	

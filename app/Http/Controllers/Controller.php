@@ -40,7 +40,12 @@ class Controller extends BaseController
 	//get session bu
 	$myIdBU = session('userClinicCode');
 	//check if date = todate
-	$buDate =  DB::connection('CMS')->table('ControlNum')->where('IdBU', 'LIKE', $myIdBU)->where('SVRID','=',$mySVRid)->get(array('Date'))[0]->Date;
+	$controlNumRow = DB::connection('CMS')->table('ControlNum')->where('IdBU', 'LIKE', $myIdBU)->where('SVRID','=',$mySVRid)->get(array('Date'));
+	if($controlNumRow->isEmpty())
+	{
+		return "Server and Clinic code not match, please use assigned server to create a queue!";
+	}
+	$buDate = $controlNumRow[0]->Date;
 	if($buDate != $today)
 	{
 		DB::connection('CMS')->table('TransactionTemp')->where('Date' , '!=' , $today)->delete();
